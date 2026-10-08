@@ -1,0 +1,9 @@
+vscode/
+vscode.tar.gz
+vscode.txt
+assets/
+build_tmp/
+node_modules/
+*.vsix
+extensions/nexcode-core/bundled/*.vsix
+__pycache__/

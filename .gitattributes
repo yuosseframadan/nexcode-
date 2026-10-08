@@ -1,0 +1,6 @@
+# Keep LF endings everywhere: shell scripts and .patch files break with CRLF.
+* text=auto eol=lf
+*.png binary
+*.ico binary
+*.bmp binary
+*.vsix binary
