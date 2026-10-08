@@ -1,0 +1,178 @@
+{
+  "name": "nexcode-core",
+  "displayName": "%displayName%",
+  "description": "%description%",
+  "version": "1.0.0",
+  "publisher": "nexcode",
+  "license": "MIT",
+  "icon": "media/icon.png",
+  "engines": { "vscode": "^1.80.0" },
+  "categories": ["Other"],
+  "main": "./extension.js",
+  "activationEvents": ["onStartupFinished"],
+  "extensionKind": ["ui", "workspace"],
+  "capabilities": {
+    "untrustedWorkspaces": { "supported": "limited", "description": "Running files executes code on your machine." },
+    "virtualWorkspaces": true
+  },
+  "contributes": {
+    "commands": [
+      { "command": "nexcode.run", "title": "%cmd.run%", "category": "NexCode", "icon": "$(play)" },
+      { "command": "nexcode.newProject", "title": "%cmd.newProject%", "category": "NexCode", "icon": "$(new-folder)" },
+      { "command": "nexcode.explainError", "title": "%cmd.explainError%", "category": "NexCode", "icon": "$(lightbulb)" },
+      { "command": "nexcode.shortcuts", "title": "%cmd.shortcuts%", "category": "NexCode", "icon": "$(keyboard)" },
+      { "command": "nexcode.changeLanguage", "title": "%cmd.changeLanguage%", "category": "NexCode", "icon": "$(globe)" },
+      { "command": "nexcode.setup", "title": "%cmd.setup%", "category": "NexCode" },
+      { "command": "nexcode.menu", "title": "%cmd.menu%", "category": "NexCode", "icon": "$(rocket)" },
+      { "command": "nexcode.openWebsite", "title": "%cmd.openWebsite%", "category": "NexCode", "icon": "$(link-external)" },
+      { "command": "nexcode.github.signIn", "title": "%cmd.ghSignIn%", "category": "NexCode", "icon": "$(github)" },
+      { "command": "nexcode.github.signInToken", "title": "%cmd.ghSignInToken%", "category": "NexCode" },
+      { "command": "nexcode.github.signOut", "title": "%cmd.ghSignOut%", "category": "NexCode" },
+      { "command": "nexcode.github.clone", "title": "%cmd.ghClone%", "category": "NexCode", "icon": "$(repo-clone)" },
+      { "command": "nexcode.github.publish", "title": "%cmd.ghPublish%", "category": "NexCode", "icon": "$(cloud-upload)" },
+      { "command": "nexcode.predict.toggle", "title": "%cmd.predictToggle%", "category": "NexCode" }
+    ],
+    "menus": {
+      "editor/title": [
+        { "command": "nexcode.run", "when": "nexcode.canRun", "group": "navigation@1" }
+      ],
+      "commandPalette": [
+        { "command": "nexcode.run", "when": "nexcode.canRun" }
+      ]
+    },
+    "keybindings": [
+      { "command": "nexcode.run", "key": "ctrl+shift+f10", "when": "nexcode.canRun" },
+      { "command": "nexcode.menu", "key": "ctrl+alt+n" }
+    ],
+    "configuration": {
+      "title": "NexCode",
+      "properties": {
+        "nexcode.website": {
+          "type": "string",
+          "default": "https://mute-mouse-67d8.yousseframadan2211.workers.dev/",
+          "description": "%cfg.website%"
+        },
+        "nexcode.github.clientId": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "%cfg.ghClientId%"
+        },
+        "nexcode.predict.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "%cfg.predict%"
+        },
+        "nexcode.explainErrors": {
+          "type": "boolean",
+          "default": true,
+          "description": "%cfg.explain%"
+        },
+        "nexcode.recommendExtensions": {
+          "type": "boolean",
+          "default": true,
+          "description": "%cfg.recommend%"
+        },
+        "nexcode.statusBar": {
+          "type": "boolean",
+          "default": true,
+          "description": "%cfg.statusBar%"
+        }
+      }
+    },
+    "configurationDefaults": {
+      "telemetry.telemetryLevel": "off",
+      "files.autoSave": "afterDelay",
+      "files.autoSaveDelay": 1000,
+      "files.encoding": "utf8",
+      "files.autoGuessEncoding": true,
+      "editor.wordBasedSuggestions": "allDocuments",
+      "editor.quickSuggestions": { "other": "on", "comments": "off", "strings": "on" },
+      "editor.suggestOnTriggerCharacters": true,
+      "editor.suggestSelection": "recentlyUsedByPrefix",
+      "editor.tabCompletion": "on",
+      "editor.snippetSuggestions": "top",
+      "editor.acceptSuggestionOnCommitCharacter": true,
+      "editor.inlineSuggest.enabled": true,
+      "editor.parameterHints.enabled": true,
+      "editor.bracketPairColorization.enabled": true,
+      "editor.guides.bracketPairs": "active",
+      "editor.smoothScrolling": true,
+      "editor.cursorSmoothCaretAnimation": "on",
+      "editor.linkedEditing": true,
+      "editor.stickyScroll.enabled": true,
+      "editor.unicodeHighlight.ambiguousCharacters": false,
+      "editor.unicodeHighlight.nonBasicASCII": false,
+      "editor.fontFamily": "'Cascadia Code', Consolas, 'Courier New', 'Segoe UI', Tahoma, monospace",
+      "workbench.list.smoothScrolling": true,
+      "terminal.integrated.smoothScrolling": true,
+      "terminal.integrated.unicodeVersion": "11",
+      "explorer.confirmDragAndDrop": false,
+      "git.confirmSync": false,
+      "git.enableSmartCommit": true,
+      "[markdown]": { "editor.wordWrap": "on", "editor.quickSuggestions": { "other": "on", "comments": "off", "strings": "off" } },
+      "[plaintext]": { "editor.wordWrap": "on" }
+    },
+    "themes": [
+      { "label": "NexCode Dark", "uiTheme": "vs-dark", "path": "./themes/nexcode-dark.json" },
+      { "label": "NexCode Light", "uiTheme": "vs", "path": "./themes/nexcode-light.json" }
+    ],
+    "walkthroughs": [
+      {
+        "id": "nexcode.start",
+        "title": "%walk.title%",
+        "description": "%walk.description%",
+        "steps": [
+          {
+            "id": "nexcode.step.open",
+            "title": "%walk.open.title%",
+            "description": "%walk.open.desc%",
+            "media": { "image": "media/logo.png", "altText": "NexCode" },
+            "completionEvents": ["onCommand:workbench.action.files.openFolder", "onCommand:workbench.action.files.openFile"]
+          },
+          {
+            "id": "nexcode.step.new",
+            "title": "%walk.new.title%",
+            "description": "%walk.new.desc%",
+            "media": { "image": "media/logo.png", "altText": "NexCode" },
+            "completionEvents": ["onCommand:nexcode.newProject"]
+          },
+          {
+            "id": "nexcode.step.run",
+            "title": "%walk.run.title%",
+            "description": "%walk.run.desc%",
+            "media": { "image": "media/logo.png", "altText": "NexCode" },
+            "completionEvents": ["onCommand:nexcode.run"]
+          },
+          {
+            "id": "nexcode.step.github",
+            "title": "%walk.github.title%",
+            "description": "%walk.github.desc%",
+            "media": { "image": "media/logo.png", "altText": "NexCode" },
+            "completionEvents": ["onCommand:nexcode.github.signIn", "onCommand:nexcode.github.signInToken"]
+          },
+          {
+            "id": "nexcode.step.ext",
+            "title": "%walk.ext.title%",
+            "description": "%walk.ext.desc%",
+            "media": { "image": "media/logo.png", "altText": "NexCode" },
+            "completionEvents": ["onView:workbench.view.extensions"]
+          },
+          {
+            "id": "nexcode.step.keys",
+            "title": "%walk.keys.title%",
+            "description": "%walk.keys.desc%",
+            "media": { "image": "media/logo.png", "altText": "NexCode" },
+            "completionEvents": ["onCommand:nexcode.shortcuts"]
+          },
+          {
+            "id": "nexcode.step.lang",
+            "title": "%walk.lang.title%",
+            "description": "%walk.lang.desc%",
+            "media": { "image": "media/logo.png", "altText": "NexCode" },
+            "completionEvents": ["onCommand:nexcode.changeLanguage"]
+          }
+        ]
+      }
+    ]
+  }
+}
