@@ -1,0 +1,175 @@
+name: Build NexCode (Windows)
+
+on:
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: "Publish a GitHub Release + auto-update files after building"
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+
+env:
+  APP_NAME: NexCode
+  BINARY_NAME: nexcode
+  GH_REPO_PATH: ${{ github.repository }}
+  ASSETS_REPOSITORY: ${{ github.repository }}
+  ORG_NAME: ${{ github.repository_owner }}
+  OS_NAME: windows
+  VSCODE_QUALITY: stable
+  VSCODE_ARCH: x64
+  VSCODE_LATEST: "no"
+  DISABLE_UPDATE: "no"
+  SHOULD_BUILD: "yes"
+  SHOULD_BUILD_REH: "no"
+  SHOULD_BUILD_REH_WEB: "no"
+  SHOULD_BUILD_CLI: "no"
+  SHOULD_BUILD_ZIP: "no"
+  SHOULD_BUILD_MSI: "no"
+  SHOULD_BUILD_MSI_NOUP: "no"
+  SHOULD_BUILD_EXE_SYS: "yes"
+  SHOULD_BUILD_EXE_USR: "yes"
+  # optional repository variable: Client ID of your GitHub OAuth App (Device Flow)
+  NEXCODE_GITHUB_CLIENT_ID: ${{ vars.NEXCODE_GITHUB_CLIENT_ID }}
+
+jobs:
+  compile:
+    runs-on: windows-2022
+    timeout-minutes: 180
+    defaults:
+      run:
+        shell: bash
+    outputs:
+      BUILD_SOURCEVERSION: ${{ env.BUILD_SOURCEVERSION }}
+      MS_COMMIT: ${{ env.MS_COMMIT }}
+      MS_TAG: ${{ env.MS_TAG }}
+      RELEASE_VERSION: ${{ env.RELEASE_VERSION }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Make scripts executable
+        run: chmod +x ./*.sh build/windows/*.sh build/windows/rtf/*.sh scripts/*.sh tools/*.py tools/i18n/*.py
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: ".nvmrc"
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Get VS Code source
+        run: ./get_repo.sh
+
+      - name: Build (branding, patches, compile) — takes a while
+        run: ./build.sh
+
+      - name: Add language packs and offline extensions
+        env:
+          MS_TAG: ${{ env.MS_TAG }}
+        run: ./scripts/inject_bundled.sh
+
+      - name: Compress vscode artifact
+        run: |
+          find vscode -type f -not -path "*/node_modules/*" -not -path "vscode/.build/node/*" -not -path "vscode/.git/*" > vscode.txt
+          echo "vscode/.build/extensions/node_modules" >> vscode.txt
+          echo "vscode/.git" >> vscode.txt
+          tar -czf vscode.tar.gz -T vscode.txt
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: vscode
+          path: ./vscode.tar.gz
+          retention-days: 1
+
+  package:
+    needs: compile
+    runs-on: windows-2022
+    timeout-minutes: 180
+    defaults:
+      run:
+        shell: bash
+    env:
+      BUILD_SOURCEVERSION: ${{ needs.compile.outputs.BUILD_SOURCEVERSION }}
+      MS_COMMIT: ${{ needs.compile.outputs.MS_COMMIT }}
+      MS_TAG: ${{ needs.compile.outputs.MS_TAG }}
+      RELEASE_VERSION: ${{ needs.compile.outputs.RELEASE_VERSION }}
+      npm_config_arch: x64
+      npm_config_target_arch: x64
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Make scripts executable
+        run: chmod +x ./*.sh build/windows/*.sh build/windows/rtf/*.sh scripts/*.sh
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: ".nvmrc"
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: vscode
+
+      - name: Package
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: ./build/windows/package.sh
+
+      - name: Create installers
+        run: ./prepare_assets.sh
+
+      - name: Checksums
+        run: ./prepare_checksums.sh
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: installers
+          path: assets/
+          retention-days: 5
+
+  release:
+    needs: [compile, package]
+    if: ${{ inputs.publish }}
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      RELEASE_VERSION: ${{ needs.compile.outputs.RELEASE_VERSION }}
+      BUILD_SOURCEVERSION: ${{ needs.compile.outputs.BUILD_SOURCEVERSION }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: installers
+          path: assets
+
+      - name: GitHub Release
+        run: |
+          ls -la assets
+          gh release create "${RELEASE_VERSION}" assets/* \
+            --repo "${GITHUB_REPOSITORY}" \
+            --title "NexCode ${RELEASE_VERSION}" \
+            --notes "NexCode ${RELEASE_VERSION} for Windows. Download **NexCodeUserSetup** (no admin rights needed) or **NexCodeSetup** (all users)."
+
+      - name: Publish auto-update files (branch "updates")
+        run: |
+          mkdir upd && cd upd
+          git init -q
+          git config user.name "NexCode CI"
+          git config user.email "nexcode-ci@users.noreply.github.com"
+          git remote add origin "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          if git fetch --depth 1 origin updates 2>/dev/null; then
+            git checkout -q -B updates FETCH_HEAD
+          else
+            git checkout -q -b updates
+          fi
+          python3 ../tools/make_update_json.py . ../assets "${RELEASE_VERSION}" "${BUILD_SOURCEVERSION}" "${GITHUB_REPOSITORY}" x64
+          git add -A
+          git commit -q -m "NexCode ${RELEASE_VERSION}"
+          git push -q origin updates
